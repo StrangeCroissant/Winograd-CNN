@@ -8,7 +8,7 @@ The class conv_layer will replace the standard torch conv2d
 import numpy as np 
 from scipy import signal
 import torch.nn as nn
-import layer
+from layer import Layer
 
 class conv_layer(Layer):
     def __init__(self,input_shape,kernel_size,depth):
