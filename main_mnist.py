@@ -8,6 +8,8 @@ from reshape import Reshape
 from activation_functions import Sigmoid, Softmax
 from loss_functions import cross_entropy
 
+from tensorflow.python.compiler.tensorrt import trt_convert as trt
+
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
