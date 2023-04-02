@@ -21,7 +21,9 @@ class Convolutional(Layer):
         for i in range(self.depth):
             for j in range(self.input_depth):
                 self.output[i] += signal.correlate2d(
-                    self.input[j], self.kernels[i, j], "valid")
+                    self.input[j],
+                    self.kernels[i, j],
+                    "valid")
         return self.output
 
     def backward(self, output_gradient, learning_rate):
