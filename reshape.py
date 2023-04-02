@@ -2,16 +2,13 @@ import numpy as np
 from layer import Layer
 
 
-class Reshape():
+class Reshape(Layer):
     def __init__(self, input_shape, output_shape):
-        # shape of input and output
         self.input_shape = input_shape
         self.output_shape = output_shape
 
-    def forward(self, image):
-        # reshape input to output
-        return np.reshape(image, self.output_shape)
+    def forward(self, input):
+        return np.reshape(input, self.output_shape)
 
-    def backward(self, output_grad, lr):
-        # reshape output to input
-        return np.reshape(output_grad, self.input_shape)
+    def backward(self, output_gradient, learning_rate):
+        return np.reshape(output_gradient, self.input_shape)

@@ -10,43 +10,34 @@ from loss_functions import cross_entropy, cross_entropy_prime
 from cnn import train, predict
 
 
-def data_loader():
-
-    # load
-    (X_train, y_train), (X_test, y_test) = mnist.load_data()
-
-    # reshape
-    X_train = X_train.reshape(len(X_train), 1, 28, 28)
-    X_test = X_test.reshape(len(X_test), 1, 28, 28)
-    X_train = X_train.astype("float32")/255  # normalize
-    X_test = X_test.astype("float32")/255  # normalize
-
-    y_train = np_utils.to_categorical(y_train)
-    y_test = np_utils.to_categorical(y_test)
-
-    y_train = y_train.reshape(len(y_train), 10, 1)
-    y_test = y_test.reshape(len(y_test), 10, 1)
-
-    return X_train, y_train, X_test, y_test
+def data_process(x, y, limit):
+    x = x.reshape(len(x), 1, 28, 28)
+    x = x.astype("float32")/255
+    y = np_utils.to_categorical(y)
+    y = y.reshape(len(y), 10, 1)
+    return x, y
 
 
-X_train, y_train, X_test, y_test = data_loader()
+#load and reshape
+(X_train, y_train), (X_test, y_test) = mnist.load_data()
+X_train, y_train = data_process(X_train, y_train, limit=60000)
+X_test, y_test = data_process(X_test, y_test, limit=10000)
 
+# check shapes
 print("X_train shape:", X_train.shape)
-print("train labels:", y_train)
 print("train labels shape:", y_train.shape)
 
-
+# build cnn model
 cnn = [
-    conv_layer((1, 28, 28), 3, 1),
+    conv_layer((1, 28, 28), 3, 5),
     Sigmoid(),
-    Reshape((1, 26, 26), (1 * 26 * 26, 1)),
+    Reshape((5, 26, 26), (5 * 26 * 26, 1)),
     Dense(1*26*26, 100),
     Sigmoid(),
     Dense(100, 2),
     Sigmoid()
 ]
-
+# train
 train(
     cnn,
     cross_entropy,
@@ -59,7 +50,6 @@ train(
 )
 
 # test
-
 for x, y in zip(X_test, y_test):
     output = predict(cnn, x)
     print(f"pred: {np.argmax(output)}, true: {np.argmax(y)}")

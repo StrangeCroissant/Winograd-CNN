@@ -24,7 +24,7 @@ def train(network, loss, loss_prime,
             error += loss(y, output)
 
             # backpropagation
-            grad = loss_prime(y_output)
+            grad = loss_prime(y, output)
             for layer in reversed(network):
                 grad = layer.backward(grad, lr)
         error /= len(X_train)
