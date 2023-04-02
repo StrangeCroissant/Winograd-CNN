@@ -6,7 +6,7 @@ from dense import Dense
 from conv_layer import conv_layer
 from reshape import Reshape
 from activation_functions import Sigmoid, Softmax
-from loss_functions import cross_entropy
+from loss_functions import cross_entropy, cross_entropy_prime
 
 
 def data_loader():
@@ -23,6 +23,9 @@ def data_loader():
     y_train = np_utils.to_categorical(y_train)
     y_test = np_utils.to_categorical(y_test)
 
+    y_train = y_train.reshape(len(y_train), 10, 1)
+    y_test = y_test.reshape(len(y_test), 10, 1)
+
     return X_train, y_train, X_test, y_test
 
 
@@ -34,16 +37,16 @@ print(X_train.shape)
 
 
 cnn = [
-    conv_layer((1, 28, 28), 3, 5),
+    conv_layer((1, 28, 28), 3, 1),
     Sigmoid(),
-    Reshape((5, 26, 26), (5 * 26*26, 1)),
-    Dense(5*26*26, 60000),
+    Reshape((1, 26, 26), (1 * 26 * 26, 1)),
+    Dense(1*26*26, 100),
     Sigmoid(),
-    Dense(60000, 2),
+    Dense(100, 2),
     Sigmoid()
 ]
 
-epochs = 20
+epochs = 60
 lr = 0.001
 
 
@@ -60,4 +63,17 @@ for e in range(epochs):
         error = cross_entropy(y, output)
 
         # backward
-        grad =
+        grad = cross_entropy_prime(y, output)
+
+        for layer in reversed(cnn):
+            grad = layer.backward(grad, lr)
+
+    error /= len(X_train)
+    print(f"{e+1}/{epochs},error={error}")
+
+    # test
+    for x, y in zip(X_test, y_test):
+        output = x
+        for layer in cnn:
+            output = layer.forward(output)
+        print(f"pred: {np.argmax(output)},true: {np.argmax(y)}")
