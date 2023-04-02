@@ -1,12 +1,13 @@
 import numpy as np
 from keras.datasets import mnist
 from keras.utils import np_utils
-
+import torch.nn as nn
 from dense import Dense
 from conv_layer import conv_layer
 from reshape import Reshape
 from activation_functions import Sigmoid, Softmax
 from loss_functions import cross_entropy, cross_entropy_prime
+from cnn import train, predict
 
 
 def data_loader():
@@ -31,9 +32,9 @@ def data_loader():
 
 X_train, y_train, X_test, y_test = data_loader()
 
-print(X_train)
+print("X_train shape:", X_train.shape)
 print("train labels:", y_train)
-print(X_train.shape)
+print("train labels shape:", y_train.shape)
 
 
 cnn = [
@@ -46,34 +47,52 @@ cnn = [
     Sigmoid()
 ]
 
-epochs = 60
-lr = 0.001
+train(
+    cnn,
+    cross_entropy,
+    cross_entropy_prime,
+    X_train,
+    y_train,
+    epochs=100,
+    lr=0.1,
+    verbose=True
+)
+
+# test
+
+for x, y in zip(X_test, y_test):
+    output = predict(cnn, x)
+    print(f"pred: {np.argmax(output)}, true: {np.argmax(y)}")
 
 
-# train
-for e in range(epochs):
-    error = 0
-    for x, y in zip(X_train, y_train):
-        # forward
-        output = x
-        for layer in cnn:
-            output = layer.forward(output)
+# epochs = 60
+# lr = 0.1
 
-        # errors
-        error = cross_entropy(y, output)
 
-        # backward
-        grad = cross_entropy_prime(y, output)
+# # train
+# for e in range(epochs):
+#     error = 0
+#     for x, y in zip(X_train, y_train):
+#         # forward
+#         output = x
+#         for layer in cnn:
+#             output = layer.forward(output)
 
-        for layer in reversed(cnn):
-            grad = layer.backward(grad, lr)
+#         # errors
+#         error = cross_entropy(y, output)
 
-    error /= len(X_train)
-    print(f"{e+1}/{epochs},error={error}")
+#         # backward
+#         grad = cross_entropy_prime(y, output)
 
-    # test
-    for x, y in zip(X_test, y_test):
-        output = x
-        for layer in cnn:
-            output = layer.forward(output)
-        print(f"pred: {np.argmax(output)},true: {np.argmax(y)}")
+#         for layer in reversed(cnn):
+#             grad = layer.backward(grad, lr)
+
+#     error /= len(X_train)
+#     print(f"{e+1}/{epochs},error={error}")
+
+#     # test
+#     for x, y in zip(X_test, y_test):
+#         output = x
+#         for layer in cnn:
+#             output = layer.forward(output)
+#         print(f"pred: {np.argmax(output)},true: {np.argmax(y)}")
