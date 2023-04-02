@@ -45,7 +45,7 @@ train(
     X_train,
     y_train,
     epochs=100,
-    lr=0.1,
+    lr=0.001,
     verbose=True
 )
 
@@ -53,36 +53,3 @@ train(
 for x, y in zip(X_test, y_test):
     output = predict(cnn, x)
     print(f"pred: {np.argmax(output)}, true: {np.argmax(y)}")
-
-
-# epochs = 60
-# lr = 0.1
-
-
-# # train
-# for e in range(epochs):
-#     error = 0
-#     for x, y in zip(X_train, y_train):
-#         # forward
-#         output = x
-#         for layer in cnn:
-#             output = layer.forward(output)
-
-#         # errors
-#         error = cross_entropy(y, output)
-
-#         # backward
-#         grad = cross_entropy_prime(y, output)
-
-#         for layer in reversed(cnn):
-#             grad = layer.backward(grad, lr)
-
-#     error /= len(X_train)
-#     print(f"{e+1}/{epochs},error={error}")
-
-#     # test
-#     for x, y in zip(X_test, y_test):
-#         output = x
-#         for layer in cnn:
-#             output = layer.forward(output)
-#         print(f"pred: {np.argmax(output)},true: {np.argmax(y)}")

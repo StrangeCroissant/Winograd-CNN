@@ -36,8 +36,8 @@ class conv_layer(Layer):
         self.biases = np.random.randn(
             *self.output_shape)  # random init of biases
 
-    def forward(self, image):
-        self.image = image
+    def forward(self, input):
+        self.input = input
         # each output equals bias + computed thing
         self.output = np.copy(self.biases)
 
@@ -50,7 +50,7 @@ class conv_layer(Layer):
 
         for i in range(self.depth):  # output depth
             for j in range(self.input_depth):  # input depth
-                self.output += signal.correlate2d(self.image[j],
+                self.output += signal.correlate2d(self.input[j],
                                                   self.kernels[i, j],
                                                   'valid')
         return self.output
@@ -75,21 +75,22 @@ class conv_layer(Layer):
         """
         kernel_grad = np.zeros(
             self.kernel_shape)  # initialize empty kernel placeholder K
-        input_grad = np.zeros(self.input_shape)  # same for input X
+        input_grad = np.zeros(
+            self.input_shape)  # same for input X
 
         # 1,3 sol
         for i in range(self.depth):
             for j in range(self.input_depth):
                 # gradient of
                 kernel_grad[i, j] = signal.correlate2d(
-                    self.image[j], output_grad[i], 'valid')
+                    self.input[j], output_grad[i], 'valid')
 
-                input_grad[j] += signal.convolve2d(output_grad,
+                input_grad[j] += signal.convolve2d(output_grad[i],
                                                    self.kernels[i, j],
                                                    'full')
 
                 # bias grads are the same as e grads
 
-                self.kernels += lr*kernel_grad
+                self.kernels -= lr*kernel_grad
                 self.biases -= lr*output_grad
                 return input_grad
