@@ -1,7 +1,7 @@
 import numpy as np
 from keras.datasets import mnist
 from keras.utils import np_utils
-
+from dropout import Dropout
 from dense import Dense
 from conv_layer import Convolutional
 from reshape import Reshape
@@ -35,6 +35,7 @@ print(y_test.shape)
 
 # neural network
 network = [
+    # Dropout(0.5),  # expreimental
     Convolutional((1, 28, 28), 3, 5),
     Sigmoid(),
     Reshape((5, 26, 26), (5 * 26 * 26, 1)),
