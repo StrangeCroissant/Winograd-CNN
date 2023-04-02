@@ -11,22 +11,21 @@ def predict(network, input):
     return output
 
 
-def train(network, loss, loss_prime,
-          X_train, y_train, epochs, lr, verbose=True):
-
+def train(network, loss, loss_prime, X_train, y_train, epochs=1000, lr=0.01, verbose=True):
     for e in range(epochs):
         error = 0
-
         for x, y in zip(X_train, y_train):
             # forward
-
             output = predict(network, x)
+
+            # error
             error += loss(y, output)
 
-            # backpropagation
+            # backward
             grad = loss_prime(y, output)
             for layer in reversed(network):
                 grad = layer.backward(grad, lr)
-        error /= len(X_train)
 
-        print(f"{e+1}/{epochs},error={error}")
+        error /= len(X_train)
+        if verbose:
+            print(f"{e + 1}/{epochs}, error={error}")
