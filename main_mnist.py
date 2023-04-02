@@ -1,10 +1,11 @@
 import numpy as np
 from keras.datasets import mnist
 from keras.utils import np_utils
-
+import torch.nn as nn
 from dense import Dense
 from conv_layer import Convolutional
 from reshape import Reshape
+from dropout import Dropout
 from activations import Sigmoid
 from loss_functions import cross_entropy, cross_entropy_prime
 from cnn import train, predict
@@ -32,9 +33,14 @@ print(y_test.shape)
 # neural network
 network = [
     Convolutional((1, 28, 28), 3, 5),
+    Dropout(0.5),
     Sigmoid(),
     Reshape((5, 26, 26), (5 * 26 * 26, 1)),
-    Dense(5 * 26 * 26, 100),
+    Convolutional((1, 26, 26), 3, 5),
+    Dropout(0.5),
+    Reshape((5, 24, 24), (5 * 24 * 24, 1)),
+    Dense(5 * 24 * 24, 100),
+    Dropout(0.5),
     Sigmoid(),
     Dense(100, 10),
     Sigmoid()
