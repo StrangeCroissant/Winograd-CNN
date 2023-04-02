@@ -12,6 +12,6 @@ class Reshape():
         # reshape input to output
         return np.reshape(image, self.output_shape)
 
-    def backward(self, output_shape, lr):
+    def backward(self, output_grad, lr):
         # reshape output to input
         return np.reshape(output_grad, self.input_shape)
