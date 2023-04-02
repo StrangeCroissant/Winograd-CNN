@@ -25,8 +25,8 @@ def preprocess_data(x, y, limit):
 
 # load MNIST from server, limit to 100 images per class since we're not training on GPU
 (x_train, y_train), (x_test, y_test) = mnist.load_data()
-x_train, y_train = preprocess_data(x_train, y_train, 6000)
-x_test, y_test = preprocess_data(x_test, y_test, 1000)
+x_train, y_train = preprocess_data(x_train, y_train, 60000)
+x_test, y_test = preprocess_data(x_test, y_test, 10000)
 
 print(len(x_train))
 print(len(x_test))
@@ -51,8 +51,8 @@ train(
     cross_entropy_prime,
     x_train,
     y_train,
-    epochs=20,
-    learning_rate=0.1
+    epochs=60,
+    learning_rate=0.01
 )
 
 # test
