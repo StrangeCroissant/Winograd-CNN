@@ -26,7 +26,7 @@ class Sigmoid(Activation):
         super().__init__(sigmoid, sigmoid_prime)
 
 
-class Softmax(Layer):
+class Softmax(Activation):
     def forward(self, input):
         tmp = np.exp(input)
         self.output = tmp / np.sum(tmp)
@@ -41,16 +41,18 @@ class Softmax(Layer):
         # return np.dot(tmp * (np.identity(n) - np.transpose(tmp)), output_gradient)
 
 
-class ReLU(Layer):
+# class ReLU(Activation):
 
-    def relu(input):
-        tmp = max(0.0, input)
-        return tmp
+#     def relu(self, input):
+#         tmp = max(0.0, input)
+#         return tmp
 
-    def relu_prime(output_gradient, tmp):
-        output_gradient = None
-        if tmp < 0:
-            output_gradient == 0
-        else:
-            output_gradient == 1
-        return output_gradient
+#     def relu_prime(self, output_gradient, tmp):
+#         output_gradient = None
+#         if tmp < 0:
+#             output_gradient == 0
+#         else:
+#             output_gradient == 1
+#         return output_gradient
+
+#     super().__init__(relu, relu_prime)

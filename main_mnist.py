@@ -5,11 +5,9 @@ from dropout import Dropout
 from dense import Dense
 from conv_layer import Convolutional
 from reshape import Reshape
-from activations import Sigmoid, Softmax, ReLU
+from activations import Sigmoid
 from losses import cross_entropy, cross_entropy_prime
 from cnn import train, predict
-
-import torch.nn as nn
 
 
 def preprocess_data(x, y, limit):
@@ -35,15 +33,14 @@ print(y_test.shape)
 network = [
 
     Convolutional((1, 28, 28), 3, 16),
-    # Sigmoid(),
-    ReLU(),
+    Sigmoid(),
+    # ReLU(),
 
 
     Convolutional((16, 26, 26), 3, 32),
-    # Sigmoid(),
-    ReLU(),
+    Sigmoid(),
+    # ReLU(),
 
-    #Reshape((32, 24, 24), (32 * 24 * 24, 1)),
     Reshape((32, 24, 24), (32 * 24 * 24, 1)),
     Dropout(0.5),
     Dense(32 * 24 * 24, 100),
@@ -61,7 +58,7 @@ train(
     x_train,
     y_train,
     epochs=30,
-    learning_rate=0.1
+    learning_rate=0.001
 )
 
 # test
