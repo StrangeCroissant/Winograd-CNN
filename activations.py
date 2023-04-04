@@ -2,6 +2,7 @@ import numpy as np
 from layer import Layer
 from activation import Activation
 
+
 class Tanh(Activation):
     def __init__(self):
         def tanh(x):
@@ -11,6 +12,7 @@ class Tanh(Activation):
             return 1 - np.tanh(x) ** 2
 
         super().__init__(tanh, tanh_prime)
+
 
 class Sigmoid(Activation):
     def __init__(self):
@@ -23,12 +25,13 @@ class Sigmoid(Activation):
 
         super().__init__(sigmoid, sigmoid_prime)
 
+
 class Softmax(Layer):
     def forward(self, input):
         tmp = np.exp(input)
         self.output = tmp / np.sum(tmp)
         return self.output
-    
+
     def backward(self, output_gradient, learning_rate):
         # This version is faster than the one presented in the video
         n = np.size(self.output)
@@ -36,3 +39,18 @@ class Softmax(Layer):
         # Original formula:
         # tmp = np.tile(self.output, n)
         # return np.dot(tmp * (np.identity(n) - np.transpose(tmp)), output_gradient)
+
+
+class ReLU(Layer):
+
+    def relu(input):
+        tmp = max(0.0, input)
+        return tmp
+
+    def relu_prime(output_gradient, tmp):
+        output_gradient = None
+        if tmp < 0:
+            output_gradient == 0
+        else:
+            output_gradient == 1
+        return output_gradient

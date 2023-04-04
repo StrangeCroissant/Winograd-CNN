@@ -5,18 +5,15 @@ from dropout import Dropout
 from dense import Dense
 from conv_layer import Convolutional
 from reshape import Reshape
-from activations import Sigmoid, Softmax, Tanh
+from activations import Sigmoid, Softmax, ReLU
 from losses import cross_entropy, cross_entropy_prime
 from cnn import train, predict
-from sklearn.metrics import accuracy_score
+
+import torch.nn as nn
 
 
 def preprocess_data(x, y, limit):
-    # zero_index = np.where(y == 0)[0][:limit]
-    # one_index = np.where(y == 1)[0][:limit]
-    # all_indices = np.hstack((zero_index, one_index))
-    # all_indices = np.random.permutation(all_indices)
-    # x, y = x[all_indices], y[all_indices]
+
     x = x.reshape(len(x), 1, 28, 28)[:limit]
     x = x.astype("float32") / 255
     y = np_utils.to_categorical(y)[:limit]
@@ -36,26 +33,24 @@ print(y_test.shape)
 
 # neural network
 network = [
-    Dropout(0.5),
-    Convolutional((1, 28, 28), 3, 16),
-    Sigmoid(),
 
-    Dropout(0.5),
-    Convolutional((16, 26, 26), 3, 32),  # <-- new convolutional layer
-    Sigmoid(),
+    Convolutional((1, 28, 28), 3, 16),
+    # Sigmoid(),
+    ReLU(),
+
+
+    Convolutional((16, 26, 26), 3, 32),
+    # Sigmoid(),
+    ReLU(),
 
     #Reshape((32, 24, 24), (32 * 24 * 24, 1)),
-    Reshape((32, 24, 24), (32 * 24 * 24, 1)),  # <-- updated reshape layer
-
+    Reshape((32, 24, 24), (32 * 24 * 24, 1)),
     Dropout(0.5),
     Dense(32 * 24 * 24, 100),
-
     Sigmoid(),
     Dropout(0.5),
-
     Dense(100, 10),
-    # Sigmoid()
-    Softmax()
+    Sigmoid()
 ]
 
 # train
@@ -65,7 +60,7 @@ train(
     cross_entropy_prime,
     x_train,
     y_train,
-    epochs=5,
+    epochs=30,
     learning_rate=0.1
 )
 
