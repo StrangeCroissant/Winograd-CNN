@@ -1,7 +1,7 @@
 # generic
 import numpy as np
 import pandas as pd
-import datetime
+from datetime import datetime
 # nn layers
 import torchvision
 from torch.utils.tensorboard import SummaryWriter
@@ -16,48 +16,58 @@ from keras.datasets import mnist
 from keras.utils import np_utils
 
 
-def data_process(x, y, limit):
-    """
-    Function that loads and reshapes mnist dataset from keras
-    limit: limits the dataset length for debuging purposes
-    """
+# def data_process(x, y, limit):
+#     """
+#     Function that loads and reshapes mnist dataset from keras
+#     limit: limits the dataset length for debuging purposes
+#     """
 
-    x = x.reshape(len(x), 1, 28, 28)[:limit]
-    x = x.astype("float32")/255.0
-    # creating label column vectors of lenght 10
-    y = np_utils.to_categorical(y)[:limit]
-    y = y.reshape(len(y), 10, 1)
+#     x = x.reshape(len(x), 1, 28, 28)[:limit]
+#     x = x.astype("float32")/255.0
+#     # creating label column vectors of lenght 10
+#     y = np_utils.to_categorical(y)[:limit]
+#     y = y.reshape(len(y), 10, 1)
 
-    # from np to torch tensors
+#     # from np to torch tensors
 
-    x = torch.from_numpy(x).type(torch.LongTensor)
-    y = torch.from_numpy(y).type(torch.LongTensor)
+#     x = torch.from_numpy(x).type(torch.LongTensor)
+#     y = torch.from_numpy(y).type(torch.LongTensor)
 
-    return x, y
-
-
-# call the mnist() function and get training validation data
-(X_train, y_train), (X_test, y_test) = mnist.load_data()
-
-X_train, y_train = data_process(X_train, y_train, 600)
-X_test, y_test = data_process(X_test, y_test, 100)
+#     return x, y
 
 
-print(
-    f"Training data shape: {X_train.shape},Training labels shape: {y_test.shape}"
-)
-print(
-    f"Training data type: {type(X_train)},Training labels type: {type(y_test.type)}"
-)
+# # call the mnist() function and get training validation data
+# (X_train, y_train), (X_test, y_test) = mnist.load_data()
+
+# X_train, y_train = data_process(X_train, y_train, 600)
+# X_test, y_test = data_process(X_test, y_test, 100)
 
 
-"""
- Create dataloades for training testing, batch size can be set here
-"""
-batch_size = 32
-train = torch.utils.data.TensorDataset(X_train, y_train)
-test = torch.utils.data.TensorDataset(X_test, y_test)
+# print(
+#     f"Training data shape: {X_train.shape},Training labels shape: {y_test.shape}"
+# )
+# print(
+#     f"Training data type: {type(X_train)},Training labels type: {type(y_test.type)}"
+# )
 
+
+# """
+#  Create dataloades for training testing, batch size can be set here
+# """
+# batch_size = 32
+# train = torch.utils.data.TensorDataset(X_train, y_train)
+# test = torch.utils.data.TensorDataset(X_test, y_test)
+batch_size = 4
+transform = transforms.Compose([transforms.ToTensor(),
+                                transforms.Normalize((0.5,), (0.5,))])
+train = torchvision.datasets.MNIST('./data',
+                                   train=True,
+                                   transform=transform,
+                                   download=True)
+test = torchvision.datasets.MNIST('./data',
+                                  train=False,
+                                  transform=transform,
+                                  download=True)
 
 # create a trainloader
 
@@ -66,11 +76,13 @@ train_loader = torch.utils.data.DataLoader(
 test_loader = torch.utils.data.DataLoader(
     test, batch_size=batch_size, shuffle=False)
 
+classes = ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
 
-print(train_loader)
-
+print('Training set has {} instances'.format(len(train)))
+print('Testing set has {} instances'.format(len(test)))
 
 # Core NN architecutre baseline
+
 
 class network(nn.Module):
     def __init__(self):
@@ -191,3 +203,9 @@ for epoch in range(epochs):
         torch.save(cnn.state_dict(), model_path)
 
     epoch_number += 1
+
+
+# load saved model
+
+# saved_model = cnn()
+# saved_model.load_state_dict(toch.load(PATH))
