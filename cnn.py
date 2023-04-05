@@ -33,7 +33,7 @@ def train(network, loss, loss_prime, x_train, y_train, epochs=1000, learning_rat
             grad = loss_prime(y, output)
             for layer in reversed(network):
                 grad = layer.backward(grad, learning_rate)
-
+        acc /= len(x_train)
         error /= len(x_train)
         if verbose:
             print(f"{e + 1}/{epochs}, error={error},accuracy={acc}")
