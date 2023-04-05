@@ -63,11 +63,11 @@ transform = transforms.Compose([transforms.ToTensor(),
 train = torchvision.datasets.MNIST('./data',
                                    train=True,
                                    transform=transform,
-                                   download=True)
+                                   download=False)
 test = torchvision.datasets.MNIST('./data',
                                   train=False,
                                   transform=transform,
-                                  download=True)
+                                  download=False)
 
 # create a trainloader
 
@@ -180,7 +180,7 @@ for epoch in range(epochs):
 
         tinputs, tlabels = tdata
         toutputs = cnn(tinputs)
-        toutputs = loss_function(toutputs, tlabels)
+        # toutputs = loss_function(toutputs, tlabels)
 
         tloss = loss_function(toutputs, tlabels)
         running_tloss += tloss
@@ -189,9 +189,9 @@ for epoch in range(epochs):
 
     # log the running loss averaged per batch for train/test
 
-    writer.add_scaler('Trainings vs Testing Loss',
-                      {'Training': avg_loss, 'Testing': avg_tloss},
-                      epoch_number+1)
+    writer.add_scalars('Trainings vs Testing Loss',
+                       {'Training': avg_loss, 'Testing': avg_tloss},
+                       epoch_number+1)
 
     writer.flush()
 
