@@ -17,11 +17,11 @@ transform = transforms.Compose([transforms.ToTensor(),
 train = torchvision.datasets.MNIST('./data',
                                    train=True,
                                    transform=transform,
-                                   download=False)
+                                   download=True)
 test = torchvision.datasets.MNIST('./data',
                                   train=False,
                                   transform=transform,
-                                  download=False)
+                                  download=True)
 
 # create a trainloader
 
