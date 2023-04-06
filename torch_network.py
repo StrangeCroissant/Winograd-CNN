@@ -11,6 +11,9 @@ import torch.nn.functional as F
 import torch.nn as nn
 
 
+from conv_layer import Convolutional
+from dense import Dense
+
 batch_size = 4
 transform = transforms.Compose([transforms.ToTensor(),
                                 transforms.Normalize((0.5,), (0.5,))])
@@ -42,9 +45,10 @@ class network(nn.Module):
     def __init__(self):
         super(network, self).__init__()
 
-        self.conv1 = nn.Conv2d(1, 6, 5)
+        self.conv1 = Convolutional((1, 28, 28), 3, 16)
         self.pool = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(6, 16, 5)
+        self.conv2 = Convolutional((1, 26, 26), 3, 32)
+        self.dense1 = Dense(32 * 24 * 24, 100)
         self.fc1 = nn.Linear(16 * 4 * 4, 120)
         self.fc2 = nn.Linear(120, 84)
         self.fc3 = nn.Linear(84, 10)
