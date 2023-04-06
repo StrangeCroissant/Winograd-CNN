@@ -11,6 +11,8 @@ import torch.nn.functional as F
 import torch.nn as nn
 
 
+from conv_layer import Convolutional
+
 batch_size = 4
 transform = transforms.Compose([transforms.ToTensor(),
                                 transforms.Normalize((0.5,), (0.5,))])
