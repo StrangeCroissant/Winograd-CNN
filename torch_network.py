@@ -44,11 +44,16 @@ class network(nn.Module):
     def __init__(self):
         super(network, self).__init__()
 
-        self.conv1 = Convolutional2d(
-            in_channels=1, out_channels=3, kernel_size=3)
+        # self.conv1 = Convolutional2d(
+        #     in_channels=1, out_channels=3, kernel_size=3)
+
+        self.conv1 = nn.Conv2d(1, 3, 3)
         self.pool = nn.MaxPool2d(2, 2)
-        self.conv2 = Convolutional2d(
-            in_channels=3, out_channels=5, kernel_size=3)
+
+        # self.conv2 = Convolutional2d(
+        #     in_channels=3, out_channels=5, kernel_size=3)
+
+        self.conv2 = nn.Conv2d(3, 5, 3)
         self.fc1 = nn.Linear(16 * 4 * 4, 120)
         self.fc2 = nn.Linear(120, 84)
         self.fc3 = nn.Linear(84, 10)

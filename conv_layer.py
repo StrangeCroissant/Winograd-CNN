@@ -80,6 +80,11 @@ class Convolutional2d(nn.Module):
             for j in range(out_width):
                 receptive_field = padded_x[:, :, i*self.stride:i*self.stride +
                                            kernel_size, j*self.stride:j*self.stride+kernel_size]
+                # dim check
+
+                print(receptive_field.shape)
+                print(self.weight.shape)
+
                 out[:, :, i, j] = torch.sum(receptive_field.unsqueeze(
                     1) * self.weight.unsqueeze(0), dim=[2, 3]) + self.bias
 
