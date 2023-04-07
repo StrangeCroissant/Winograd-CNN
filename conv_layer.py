@@ -43,49 +43,83 @@ import torch
 #         return input_gradient
 
 
+import numpy as np
+
+
 class Convolutional2d(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0):
-        super(Convolutional2d, self).__init__()
+    def __init__(self, num_kernels, kernel_size, padding=1):
 
-        self.in_channels = in_channels
-        self.out_channels = out_channels
+        self.num_kernels = num_kernels
         self.kernel_size = kernel_size
-        self.stride = stride
         self.padding = padding
+        self.filters = np.random.rand(num_kernels, kernel_size, kernel_size)/9
 
-        # Define learnable parameters
-        self.weight = nn.Parameter(torch.randn(
-            out_channels, in_channels, kernel_size, kernel_size))
-        self.bias = nn.Parameter(torch.randn(out_channels))
+    def iteration(self, image):
+        """
+        generates all possible kernel_size x kernel_sizε regions of the image
+        using padding
 
-    def forward(self, x):
-        # Extract dimensions
-        batch_size, in_channels, in_height, in_width = x.shape
-        kernel_size = self.kernel_size
+        padding : typicaly  
 
-        # Pad the input tensor
-        padded_x = nn.functional.pad(
-            x, pad=(self.padding, self.padding, self.padding, self.padding))
+        """
 
-        # Initialize output tensor
-        out_height = (in_height + 2*self.padding -
-                      kernel_size) // self.stride + 1
-        out_width = (in_width + 2*self.padding -
-                     kernel_size) // self.stride + 1
-        out_channels = self.out_channels
-        out = torch.zeros(batch_size, out_channels, out_height, out_width)
+        h, w = image.shape
+        if self.padding == None:
+            self.padding = (self.kernel_size - 1)/2
+        for i in range(h-self.pading):
+            for j in range(h-self.padding):
+                image_region = image[
+                    i:(i+self.kernel_size),
+                    j:(j+self.kernel_size)
+                ]
+        yield image_region, i, j
 
-        # Perform convolution
-        for i in range(out_height):
-            for j in range(out_width):
-                receptive_field = padded_x[:, :, i*self.stride:i*self.stride +
-                                           kernel_size, j*self.stride:j*self.stride+kernel_size]
-                # dim check
+    def forward(self, input):
+        """
+    This will be the forward pass of convolution layer. First we set as input the last_input of the nn
 
-                print(receptive_field.shape)
-                print(self.weight.shape)
+        """
 
-                out[:, :, i, j] = torch.sum(receptive_field.unsqueeze(
-                    1) * self.weight.unsqueeze(0), dim=[2, 3]) + self.bias
+        self.last_input = input
 
-        return out
+        h, w = input.shape
+
+        output = np.zeros(
+            (h-(self.kernel_size-1)/2),
+            (w-(self.kernel_size-1)/2),
+            self.num_kernels
+        )  # for example for a 3x3 convolution of 16 kernel on a 28x28 input --> (26,26,16)
+
+        # print(output.shape)
+        # iterate through regions
+
+        for image_region, i, j in self.iteration(input):
+            output[i, j] = np.sum(image_region*self.filters)
+            return output
+
+        # print(output.shape)
+
+    def backpward(self, gradC_out, lr=0.01):
+        """
+        we will TRY to implement backpropagation on our convolution
+
+        we need to calculate the gradients and update
+
+        gradC_out : loss gradient for the conv layer output
+        lr: learning rate 
+        """
+
+        # initiate zero gradients
+        kernel_grad = np.zeros(self.filters.shape)
+
+        # print(gradC_out)
+
+        for image_region, i, j in self.iteration(self.last_input):
+
+            for k in range(self.num_kernels):
+                kernel_grad[k] += gradC_out[i, j, k]*image_region
+
+        # update kernel
+        self.filters -= lr*kernel_grad
+
+        return None

@@ -5,7 +5,7 @@ from datetime import datetime
 import torchvision
 from torch.utils.tensorboard import SummaryWriter
 import torchvision.transforms as transforms
-
+import numpy as np
 import torch
 import torch.nn.functional as F
 import torch.nn as nn
@@ -40,32 +40,38 @@ print('Testing set has {} instances'.format(len(test)))
 # Core NN architecutre baseline
 
 
-class network(nn.Module):
-    def __init__(self):
-        super(network, self).__init__()
+# class network(nn.Module):
+#     def __init__(self):
+#         super(network, self).__init__()
 
-        self.conv1 = nn.Conv2d(1, 6, 5)
-        self.pool = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(6, 16, 5)
-        self.fc1 = nn.Linear(16 * 4 * 4, 120)
-        self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 10)
+#         self.conv1 = nn.Conv2d(1, 6, 5)
+#         self.pool = nn.MaxPool2d(2, 2)
+#         self.conv2 = nn.Conv2d(6, 16, 5)
+#         self.fc1 = nn.Linear(16 * 4 * 4, 120)
+#         self.fc2 = nn.Linear(120, 84)
+#         self.fc3 = nn.Linear(84, 10)
 
-    def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
-        x = x.view(-1, 16 * 4 * 4)
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = self.fc3(x)
-        return x
+#     def forward(self, x):
+#         x = self.pool(F.relu(self.conv1(x)))
+#         x = self.pool(F.relu(self.conv2(x)))
+#         x = x.view(-1, 16 * 4 * 4)
+#         x = F.relu(self.fc1(x))
+#         x = F.relu(self.fc2(x))
+#         x = self.fc3(x)
+#         return x
 
 
-cnn = network()
+conv1 = Convolutional2d(num_kernels=8, kernel_size=3, padding=1)
+pool = nn.MaxPool2d()
+relu = nn.ReLU()
 
-print(cnn)
+
+def forward(image, label):
+
+    out = conv1.forward(image)
 
 # loss and optimizer
+
 
 loss_function = nn.CrossEntropyLoss()
 optimizer = torch.optim.SGD(
@@ -75,7 +81,7 @@ optimizer = torch.optim.SGD(
 )
 
 """
-    Training for 1 epoch, we will call this function for every epoch 
+    Training for 1 epoch, we will call this function for every epoch
 """
 
 
@@ -151,17 +157,17 @@ for epoch in range(epochs):
 
     writer.flush()
 
-    # trach best perrformance and save model state
+    # trach best perrformance and save cnn state
 
     if avg_tloss < best_tloss:
         best_tloss = avg_tloss
-        model_path = "model_{}_{}".format(timestamp, epoch_number)
-        torch.save(cnn.state_dict(), model_path)
+        cnn_path = "cnn_{}_{}".format(timestamp, epoch_number)
+        torch.save(cnn.state_dict(), cnn_path)
 
     epoch_number += 1
 
 
-# load saved model
+# load saved cnn
 
-# saved_model = cnn()
-# saved_model.load_state_dict(toch.load(PATH))
+# saved_cnn = cnn()
+# saved_cnn.load_state_dict(toch.load(PATH))
