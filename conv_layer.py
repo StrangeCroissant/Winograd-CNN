@@ -54,50 +54,28 @@ class Convolutional2d(nn.Module):
         self.padding = padding
         self.filters = np.random.rand(num_kernels, kernel_size, kernel_size)/9
 
-    def iteration(self, image):
-        """
-        generates all possible kernel_size x kernel_sizε regions of the image
-        using padding
+    def iterate_regions(self, image):
 
-        padding : typicaly  
+        ch, h, w = image.shape
 
-        """
-
-        h, w = image.shape
-        if self.padding == None:
-            self.padding = (self.kernel_size - 1)/2
-        for i in range(h-self.pading):
-            for j in range(h-self.padding):
-                image_region = image[
-                    i:(i+self.kernel_size),
-                    j:(j+self.kernel_size)
-                ]
-        yield image_region, i, j
+        for i in range(h - 2):
+            for j in range(w - 2):
+                im_region = image[i:(i + 3), j:(j + 3)]
+                yield im_region, i, j
 
     def forward(self, input):
-        """
-    This will be the forward pass of convolution layer. First we set as input the last_input of the nn
+        '''
+        Performs a forward pass of the conv layer using the given input.
+        Returns a 3d numpy array with dimensions (h, w, num_kernels).
+        - input is a 2d numpy array
+        '''
+        ch, h, w = input.shape
+        output = np.zeros((h - 2, w - 2, self.num_kernels))
 
-        """
-
-        self.last_input = input
-
-        h, w = input.shape
-
-        output = np.zeros(
-            (h-(self.kernel_size-1)/2),
-            (w-(self.kernel_size-1)/2),
-            self.num_kernels
-        )  # for example for a 3x3 convolution of 16 kernel on a 28x28 input --> (26,26,16)
-
-        # print(output.shape)
-        # iterate through regions
-
-        for image_region, i, j in self.iteration(input):
-            output[i, j] = np.sum(image_region*self.filters)
+        for im_region, i, j in self.iterate_regions(input):
+            output[i, j] = np.sum(im_region * self.filters, axis=(1, 2))
             return output
-
-        # print(output.shape)
+            # print(output.shape)
 
     def backpward(self, gradC_out, lr=0.01):
         """
