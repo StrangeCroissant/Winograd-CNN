@@ -52,7 +52,7 @@ class Convolutional2d(nn.Module):
         self.num_kernels = num_kernels
         self.kernel_size = kernel_size
         self.padding = padding
-        self.filters = np.random.rand(num_kernels, kernel_size, kernel_size)/9
+        self.filters = np.random.rand(num_kernels, kernel_size, kernel_size)
 
     def iterate_regions(self, image):
 
@@ -69,10 +69,12 @@ class Convolutional2d(nn.Module):
         Returns a 3d numpy array with dimensions (h, w, num_kernels).
         - input is a 2d numpy array
         '''
-        ch, h, w = input.shape
+        h, w = input[0].shape
         output = np.zeros((h - 2, w - 2, self.num_kernels))
-
+        print("Input shape:", input.shape)
+        print("filters shape:", self.filters.shape)
         for im_region, i, j in self.iterate_regions(input):
+            print("image region shape:", im_region.shape)
             output[i, j] = np.sum(im_region * self.filters, axis=(1, 2))
             return output
             # print(output.shape)
@@ -101,3 +103,28 @@ class Convolutional2d(nn.Module):
         self.filters -= lr*kernel_grad
 
         return None
+
+
+class Conv3x3:
+    def __init__(self, num_filters, input_depth):
+        self.num_filters = num_filters
+        self.input_depth = input_depth
+
+        self.filters = np.random.randn(
+            num_filters, 3, 3, input_depth) / np.sqrt(3 * 3 * input_depth)
+
+    def iterate_regions(self, image):
+        h, w, d = image.shape
+        for i in range(h - 2):
+            for j in range(w - 2):
+                img_region = image[i:i + 3, j:j + 3, :]
+                yield img_region, i, j
+
+    def forward(self, input):
+        h = input[0].shape
+        w = input[0][0].shape
+        out = np.zeros((h - 2, w - 2, self.num_filters))
+        for img_region, i, j in self.iterate_regions(input):
+            for f in range(self.num_filters):
+                out[i, j, f] = np.sum(img_region * self.filters[f])
+        return out

@@ -84,7 +84,7 @@ def train(im, label, lr=0.005):
     # calculate initial gradient
     gradient = np.zeros(10)
     gradient[label] = -1/out[label]
-
+    print()
     # Backprop
     gradient = relu.backward(gradient, lr)
     gradient = pool.backprop(gradient)
