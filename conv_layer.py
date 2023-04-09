@@ -43,44 +43,88 @@ import torch
 #         return input_gradient
 
 
+import numpy as np
+
+
 class Convolutional2d(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0):
-        super(Convolutional2d, self).__init__()
+    def __init__(self, num_kernels, kernel_size, padding=1):
 
-        self.in_channels = in_channels
-        self.out_channels = out_channels
+        self.num_kernels = num_kernels
         self.kernel_size = kernel_size
-        self.stride = stride
         self.padding = padding
+        self.filters = np.random.rand(num_kernels, kernel_size, kernel_size)
 
-        # Define learnable parameters
-        self.weight = nn.Parameter(torch.randn(
-            out_channels, in_channels, kernel_size, kernel_size))
-        self.bias = nn.Parameter(torch.randn(out_channels))
+    def iterate_regions(self, image):
 
-    def forward(self, x):
-        # Extract dimensions
-        batch_size, in_channels, in_height, in_width = x.shape
-        kernel_size = self.kernel_size
+        ch, h, w = image.shape
 
-        # Pad the input tensor
-        padded_x = nn.functional.pad(
-            x, pad=(self.padding, self.padding, self.padding, self.padding))
+        for i in range(h - 2):
+            for j in range(w - 2):
+                im_region = image[i:(i + 3), j:(j + 3)]
+                yield im_region, i, j
 
-        # Initialize output tensor
-        out_height = (in_height + 2*self.padding -
-                      kernel_size) // self.stride + 1
-        out_width = (in_width + 2*self.padding -
-                     kernel_size) // self.stride + 1
-        out_channels = self.out_channels
-        out = torch.zeros(batch_size, out_channels, out_height, out_width)
+    def forward(self, input):
+        '''
+        Performs a forward pass of the conv layer using the given input.
+        Returns a 3d numpy array with dimensions (h, w, num_kernels).
+        - input is a 2d numpy array
+        '''
+        h, w = input[0].shape
+        output = np.zeros((h - 2, w - 2, self.num_kernels))
+        print("Input shape:", input.shape)
+        print("filters shape:", self.filters.shape)
+        for im_region, i, j in self.iterate_regions(input):
+            print("image region shape:", im_region.shape)
+            output[i, j] = np.sum(im_region * self.filters, axis=(1, 2))
+            return output
+            # print(output.shape)
 
-        # Perform convolution
-        for i in range(out_height):
-            for j in range(out_width):
-                receptive_field = padded_x[:, :, i*self.stride:i*self.stride +
-                                           kernel_size, j*self.stride:j*self.stride+kernel_size]
-                out[:, :, i, j] = torch.sum(receptive_field.unsqueeze(
-                    1) * self.weight.unsqueeze(0), dim=[2, 3]) + self.bias
+    def backpward(self, gradC_out, lr=0.01):
+        """
+        we will TRY to implement backpropagation on our convolution
 
+        we need to calculate the gradients and update
+
+        gradC_out : loss gradient for the conv layer output
+        lr: learning rate 
+        """
+
+        # initiate zero gradients
+        kernel_grad = np.zeros(self.filters.shape)
+
+        # print(gradC_out)
+
+        for image_region, i, j in self.iteration(self.last_input):
+
+            for k in range(self.num_kernels):
+                kernel_grad[k] += gradC_out[i, j, k]*image_region
+
+        # update kernel
+        self.filters -= lr*kernel_grad
+
+        return None
+
+
+class Conv3x3:
+    def __init__(self, num_filters, input_depth):
+        self.num_filters = num_filters
+        self.input_depth = input_depth
+
+        self.filters = np.random.randn(
+            num_filters, 3, 3, input_depth) / np.sqrt(3 * 3 * input_depth)
+
+    def iterate_regions(self, image):
+        h, w, d = image.shape
+        for i in range(h - 2):
+            for j in range(w - 2):
+                img_region = image[i:i + 3, j:j + 3, :]
+                yield img_region, i, j
+
+    def forward(self, input):
+        h = input[0].shape
+        w = input[0][0].shape
+        out = np.zeros((h - 2, w - 2, self.num_filters))
+        for img_region, i, j in self.iterate_regions(input):
+            for f in range(self.num_filters):
+                out[i, j, f] = np.sum(img_region * self.filters[f])
         return out
