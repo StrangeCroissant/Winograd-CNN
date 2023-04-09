@@ -9,9 +9,8 @@ import torchvision.transforms as transforms
 import torch
 import torch.nn.functional as F
 import torch.nn as nn
-
-
 from conv_layer import Convolutional2d
+
 
 batch_size = 4
 transform = transforms.Compose([transforms.ToTensor(),
@@ -44,11 +43,9 @@ class network(nn.Module):
     def __init__(self):
         super(network, self).__init__()
 
-        self.conv1 = Convolutional2d(
-            in_channels=1, out_channels=3, kernel_size=3)
+        self.conv1 = Convolutional2d(1, 6, 5)
         self.pool = nn.MaxPool2d(2, 2)
-        self.conv2 = Convolutional2d(
-            in_channels=3, out_channels=5, kernel_size=3)
+        self.conv2 = nn.Conv2d(6, 16, 5)
         self.fc1 = nn.Linear(16 * 4 * 4, 120)
         self.fc2 = nn.Linear(120, 84)
         self.fc3 = nn.Linear(84, 10)
