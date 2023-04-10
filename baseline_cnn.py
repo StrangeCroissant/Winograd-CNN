@@ -5,11 +5,10 @@ from datetime import datetime
 import torchvision
 from torch.utils.tensorboard import SummaryWriter
 import torchvision.transforms as transforms
-import numpy as np
+
 import torch
 import torch.nn.functional as F
 import torch.nn as nn
-from conv_layer import Convolutional2d
 
 
 batch_size = 4
@@ -59,40 +58,22 @@ class network(nn.Module):
         x = self.fc3(x)
         return x
 
-# HERE ### HERE ####HERE ###HERE
 
+cnn = network()
 
-print('MNIST CNN initialized')
+print(cnn)
 
-for i, data in enumerate(train_loader):
-    train_images, train_labels = data
+# loss and optimizer
 
-    print('----EPOCH %d ---' % (i+1))
-
-    # shuffle the training data
-    permutation = np.random.permutation(len(train_images))
-    train_images = train_images[permutation]
-    train_labels = train_labels[permutation]
-
-    loss = 0
-    num_correct = 0
-
-    for i, (im, label) in enumerate(zip(train_images, train_labels)):
-
-        # print stats every 100 steps
-        if (i > 0 and i % 100 == 99):
-            print('[Step %d] Past 100 steps: Average Loss %.3f | Accuracy: %d%%' % (
-                i + 1, loss / 100, num_correct))
-
-            loss = 0
-            num_correct = 0
-        l, acc = train(im, label)
-        loss += l
-        num_correct += acc
-
+loss_function = nn.CrossEntropyLoss()
+optimizer = torch.optim.SGD(
+    cnn.parameters(),
+    lr=0.001,
+    momentum=0.9
+)
 
 """
-    Training for 1 epoch, we will call this function for every epoch
+    Training for 1 epoch, we will call this function for every epoch 
 """
 
 
@@ -168,17 +149,17 @@ for epoch in range(epochs):
 
     writer.flush()
 
-    # trach best perrformance and save cnn state
+    # trach best perrformance and save model state
 
     if avg_tloss < best_tloss:
         best_tloss = avg_tloss
-        cnn_path = "cnn_{}_{}".format(timestamp, epoch_number)
-        torch.save(cnn.state_dict(), cnn_path)
+        model_path = "model_{}_{}".format(timestamp, epoch_number)
+        torch.save(cnn.state_dict(), model_path)
 
     epoch_number += 1
 
 
-# load saved cnn
+# load saved model
 
-# saved_cnn = cnn()
-# saved_cnn.load_state_dict(toch.load(PATH))
+# saved_model = cnn()
+# saved_model.load_state_dict(toch.load(PATH))
