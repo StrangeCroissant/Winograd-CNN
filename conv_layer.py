@@ -70,6 +70,8 @@ class Convolutional2d(nn.Module):
         - input is a 2d numpy array
         '''
         h, w = input[0].shape
+        print(self.num_kernels.type())
+        print(h.type())
         output = np.zeros((h - 2, w - 2, self.num_kernels))
         print("Input shape:", input.shape)
         print("filters shape:", self.filters.shape)

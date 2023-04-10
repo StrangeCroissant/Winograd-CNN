@@ -13,6 +13,7 @@ test_images = mnist.test_images()
 test_labels = mnist.test_labels()
 print("H H D reshape for MNIST 28,28,1:",
       train_images[0].reshape(28, 28, -1).shape)
+
 conv = Conv3x3(8, input_depth=1)
 
 output = conv.forward(train_images[0].reshape(28, 28, -1))
