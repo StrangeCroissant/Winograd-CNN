@@ -6,7 +6,7 @@ from winograd2d import WinogradConv2d
 from torchvision import datasets
 from torchvision.transforms import transforms
 import warnings
-from accuracy_fn import accuracy_fn
+from helper_functions import accuracy_fn
 from train_test_loop import test_step, train_step
 from tqdm.auto import tqdm
 from timeit import default_timer as timer

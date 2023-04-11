@@ -1,4 +1,4 @@
-from accuracy_fn import accuracy_fn
+from helper_functions import accuracy_fn
 import torch
 import torch.nn as nn
 import torch.optim as optim
