@@ -1,60 +1,42 @@
-import numpy as np
-from layer import Layer
-from activation import Activation
+import torch.nn as nn
 
 
-class Tanh(Activation):
+class ReLU_custom(nn.Module):
     def __init__(self):
-        def tanh(x):
-            return np.tanh(x)
+        def forward(self, x):
+            """
+            Computes the forward pass of the ReLU
+            Input:
+                -x : Inputs of any shape
+            Returns a tuple of: (out,cache)
 
-        def tanh_prime(x):
-            return 1 - np.tanh(x) ** 2
+            The shape on the output is the same as the input
 
-        super().__init__(tanh, tanh_prime)
+            """
 
+            out = None
 
-class Sigmoid(Activation):
-    def __init__(self):
-        def sigmoid(x):
-            return 1 / (1 + np.exp(-x))
+            relu = lambda x: x * (x > 0).astype(float)
+            out = relu(x)
 
-        def sigmoid_prime(x):
-            s = sigmoid(x)
-            return s * (1 - s)
+            # cahce the out
 
-        super().__init__(sigmoid, sigmoid_prime)
+            cache = x
 
+            return out, cache
 
-class Softmax(Activation):
-    def __init__(self):
+        def backward(dout, cache):
+            """
+            Computes the backward pass of ReLU
 
-        def softmax(input):
-            tmp = np.exp(input)
-            self.output = tmp / np.sum(tmp)
-            return self.output
+            Input:
+                - dout: grads of any shape
+                - cache : previous input (used on o forward pass)
+            """
+            # init dx and x
+            dx, x = None, cache
 
-        def softmax_prime(output_gradient, learning_rate):
-            # This version is faster than the one presented in the video
-            n = np.size(self.output)
-            return np.dot((np.identity(n) - self.output.T) * self.output, output_gradient)
-            # Original formula:
-            # tmp = np.tile(self.output, n)
-            # return np.dot(tmp * (np.identity(n) - np.transpose(tmp)), output_gradient)
+            # zeros all the dx for negative x
+            dx = dout * (x > 0)
 
-
-# class ReLU(Activation):
-
-#     def relu(self, input):
-#         tmp = max(0.0, input)
-#         return tmp
-
-#     def relu_prime(self, output_gradient, tmp):
-#         output_gradient = None
-#         if tmp < 0:
-#             output_gradient == 0
-#         else:
-#             output_gradient == 1
-#         return output_gradient
-
-#     super().__init__(relu, relu_prime)
+            return dx  # terun gradient

@@ -5,24 +5,18 @@ import torch.optim as optim
 from winograd2d import WinogradConv2d
 from torchvision import datasets
 from torchvision.transforms import transforms
-import warnings
+import torch.nn.functional as F
+
 from accuracy_fn import accuracy_fn
 from train_test_loop import test_step, train_step
 from tqdm.auto import tqdm
 from timeit import default_timer as timer
 
-# ignore noisy warnings
-warnings.filterwarnings("ignore")
-# device agnostic script runs in cuda if able
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-
-# Set the input, output channel dimensions and batch size
 batch_size = 32
 in_channels = 16
 out_channels = 32
 
-
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 train_data = datasets.MNIST(
     root="./data", train=True, download=True, transform=transforms.ToTensor()
 )
@@ -39,40 +33,27 @@ test_loader = torch.utils.data.DataLoader(
     test_data, batch_size=batch_size, shuffle=False
 )
 
-print(train_loader)
-print(train_data)
 
-# intantiate winograd layer
-winograd_convolution = WinogradConv2dF23(
-    in_channels=in_channels, out_channels=out_channels
-).to(device)
+class nn(torch.nn.Module):
+    def __init__(self):
+        super(nn, self).__init__()
 
+        self.conv1 = WinogradConv2d(1, 10, m=2, r=1)
+        self.fc1 = torch.nn.Linear(10 * 12 * 12, 10)
 
-model = nn.Sequential(
-    winograd_convolution,
-    nn.BatchNorm2d(out_channels),
-    nn.ReLU(),
-    nn.MaxPool2d(2),
-    nn.Conv2d(out_channels, out_channels * 2, 3, padding=1),
-    nn.BatchNorm2d(out_channels * 2),
-    nn.ReLU(),
-    nn.MaxPool2d(2),
-    nn.Flatten(),
-    nn.Linear(out_channels * 2 * 7 * 7, 10),
-).to(device)
+    def forward(self, x):
+        x = F.relu(F.max_pool2d(self.conv1(x), 2))
+        x = x.view(-1, 10 * 12 * 12)
+        x = self.fc1(x)
+        return x
 
 
-loss_fn = nn.CrossEntropyLoss()
-optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
+model = nn()
 
 
-print(model)
-# train loop
-
-"""
-Initializing training-testing of nn 
-"""
 train_time_start_on_device = timer()
+loss_fn = torch.nn.CrossEntropyLoss()
+optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
 
 
 epochs = 3
