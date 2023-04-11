@@ -1,65 +1,108 @@
 import mnist
-from conv_layer import Conv3x3
-
 import torch
 import torch.nn as nn
-import activation
-from activations import Softmax, Sigmoid
+import torch.optim as optim
+from winograd2d import WinogradConv2d
+from torchvision import datasets
+from torchvision.transforms import transforms
+import warnings
 
-train_images = mnist.train_images()
-train_labels = mnist.train_labels()
-print("single sample size:", train_images[0].shape)
-test_images = mnist.test_images()
-test_labels = mnist.test_labels()
-print("H H D reshape for MNIST 28,28,1:",
-      train_images[0].reshape(28, 28, -1).shape)
-
-conv = Conv3x3(8, input_depth=1)
-
-output = conv.forward(train_images[0].reshape(28, 28, -1))
-
-print("Output shape:", output.shape)
-
-print(f"2D output shape : {output[0].shape}")
+# ignore noisy warnings
+warnings.filterwarnings("ignore")
+# device agnostic script runs in cuda if able
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-conv1 = Conv3x3(8, input_depth=1)
-act1 = Softmax()
-conv2 = Conv3x3(16, input_depth=8)
-act2 = Softmax()
-fc1 = nn.Linear(16 * 24 * 24, 1024)
-fc2 = nn.Linear(1024, 512)
-fc3 = nn.Linear(512, 10)
+# Set the input, output channel dimensions and batch size
+batch_size = 32
+in_channels = 16
+out_channels = 32
 
 
-def forward(image, label):
+train_data = datasets.MNIST(
+    root="./data", train=True, download=True, transform=transforms.ToTensor()
+)
+test_data = datasets.MNIST(
+    root="./data", train=False, download=True, transform=transforms.ToTensor()
+)
 
-    out = conv1.forward((image/255))
-    out = act1.forward(out)
-    out = conv2.forward((image/255))
-    out = act2.forward(out)
-    out = fc1.forward(out)
-    out = fc2.forward(out)
-    out = fc3.forward(out)
+# data loaders
 
-    import numpy as np
-    loss = -np.log(out[label])
-    acc = 1 if np.argmax(out) == label else 0
+train_loader = torch.utils.data.DataLoader(
+    train_data, batch_size=batch_size, shuffle=True
+)
+test_loader = torch.utils.data.DataLoader(
+    test_data, batch_size=batch_size, shuffle=False
+)
 
-    return out, loss, acc
+print(train_loader)
+print(train_data)
+
+# intantiate winograd layer
+winograd_convolution = WinogradConv2d(
+    in_channels=in_channels, out_channels=out_channels
+).to(device)
 
 
-print("MNIST CNN init ")
-loss = 0
-num_correct = 0
-for i, (im, label) in enumerate(zip(test_images, test_labels)):
-    # Do a forward pass.
-    _, l, acc = forward(im, label)
-    loss += l
-    num_correct += acc
-    if i % 100 == 99:
-        print(
-            '[Step %d] Past 100 steps: Average Loss %.3f | Accuracy: %d%%' %
-            (i + 1, loss / 100, num_correct))
-    loss = 0
-    num_correct = 0
+model = nn.Sequential(
+    winograd_convolution,
+    nn.BatchNorm2d(out_channels),
+    nn.ReLU(),
+    nn.MaxPool2d(2),
+    nn.Conv2d(out_channels, out_channels * 2, 3, padding=1),
+    nn.BatchNorm2d(out_channels * 2),
+    nn.ReLU(),
+    nn.MaxPool2d(2),
+    nn.Flatten(),
+    nn.Linear(out_channels * 2 * 7 * 7, 10),
+).to(device)
+
+
+loss_fn = nn.CrossEntropyLoss()
+optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
+
+
+print(model)
+# train loop
+from accuracy_fn import accuracy_fn
+
+
+def train_step(
+    model: nn.Module,
+    data_loader: torch.utils.data.DataLoader,
+    loss_fn: nn.Module,
+    optimizer: optim.Optimizer,
+    accuracy_fn,
+    device: torch.device = device,
+):
+    # inititalize 0 acc and loss
+    train_loss, train_acc = 0, 0
+
+    # set model to train mode
+    model.train()
+
+    for batch, (X, y) in enumerate(data_loader):
+        # move data to device
+        X, y = X.to(device), y.to(device)
+
+        # forward pass
+        y_pred = model(X)
+        # loss_per_batch
+        loss = loss_fn(y_pred, y)
+
+        # accumulate loss and accc
+        train_loss += loss
+
+        train_acc += accuracy_fn(y_true=y, y_pred=y_pred.argmax(dim=1))
+
+        # zero grad optim
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+    # train loss acc average per batch
+
+    train_loss /= len(data_loader)
+    train_acc /= len(data_loader)
+
+    print(f"Train loss:{train_loss:.5f} | Train acc:{train_acc:.2f}%")
