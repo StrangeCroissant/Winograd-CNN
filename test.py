@@ -2,10 +2,14 @@ import mnist
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from winograd2d import WinogradConv2d
+from winograd2d import WinogradConv2dF23
 from torchvision import datasets
 from torchvision.transforms import transforms
 import warnings
+from accuracy_fn import accuracy_fn
+from train_test_loop import test_step, train_step
+from tqdm.auto import tqdm
+from timeit import default_timer as timer
 
 # ignore noisy warnings
 warnings.filterwarnings("ignore")
@@ -39,7 +43,7 @@ print(train_loader)
 print(train_data)
 
 # intantiate winograd layer
-winograd_convolution = WinogradConv2d(
+winograd_convolution = WinogradConv2dF23(
     in_channels=in_channels, out_channels=out_channels
 ).to(device)
 
@@ -64,45 +68,39 @@ optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
 
 print(model)
 # train loop
-from accuracy_fn import accuracy_fn
+
+"""
+Initializing training-testing of nn 
+"""
+train_time_start_on_device = timer()
 
 
-def train_step(
-    model: nn.Module,
-    data_loader: torch.utils.data.DataLoader,
-    loss_fn: nn.Module,
-    optimizer: optim.Optimizer,
-    accuracy_fn,
-    device: torch.device = device,
-):
-    # inititalize 0 acc and loss
-    train_loss, train_acc = 0, 0
+epochs = 3
+for epoch in tqdm(range(epochs)):
+    print(f"Epoch: {epoch}\n-------- ")
 
-    # set model to train mode
-    model.train()
+    """Training Step """
+    train_step(
+        model=model,
+        data_loader=train_loader,
+        loss_fn=loss_fn,
+        optimizer=optimizer,
+        accuracy_fn=accuracy_fn,
+        device=device,
+    )
 
-    for batch, (X, y) in enumerate(data_loader):
-        # move data to device
-        X, y = X.to(device), y.to(device)
+    """Testing Step """
+    test_step(
+        model=model,
+        data_loader=test_loader,
+        loss_fn=loss_fn,
+        accuracy_fn=accuracy_fn,
+        device=device,
+    )
+    print(f"epoch {epoch} done!")
 
-        # forward pass
-        y_pred = model(X)
-        # loss_per_batch
-        loss = loss_fn(y_pred, y)
 
-        # accumulate loss and accc
-        train_loss += loss
+train_time_end_on_device = timer()
 
-        train_acc += accuracy_fn(y_true=y, y_pred=y_pred.argmax(dim=1))
-
-        # zero grad optim
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-
-    # train loss acc average per batch
-
-    train_loss /= len(data_loader)
-    train_acc /= len(data_loader)
-
-    print(f"Train loss:{train_loss:.5f} | Train acc:{train_acc:.2f}%")
+runtime = train_time_end_on_device - train_time_start_on_device
+print(f"Total training runntime:{runtime} second")
