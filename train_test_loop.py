@@ -49,6 +49,7 @@ def train_step(
     train_acc /= len(data_loader)
 
     print(f"Train loss:{train_loss:.5f} | Train acc:{train_acc:.2f}%")
+    return train_loss, train_acc
 
 
 def test_step(
@@ -86,3 +87,4 @@ def test_step(
         test_acc /= len(data_loader)
     # print out evals
     print(f"Test loss:{test_loss:.5f} | Test acc:{test_acc:.2f}% \n")
+    return test_loss, test_acc

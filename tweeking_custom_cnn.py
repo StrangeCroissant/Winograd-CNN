@@ -66,6 +66,9 @@ class network(nn.Module):
         self.relu2 = nn.ReLU()
         self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2)
 
+        # Dropout layer
+        self.drop1 = nn.Dropout(0.5)
+
         # fully connected layer
 
         self.fc1 = nn.Linear(in_features=64 * 7 * 7, out_features=10)
@@ -83,6 +86,8 @@ class network(nn.Module):
         x = self.conv2(x)
         x = self.relu2(x)
         x = self.pool2(x)
+
+        x = self.drop1(x)
 
         # flatten
         x = x.view(-1, 7 * 7 * 64)
@@ -202,7 +207,7 @@ Initializing training-testing of nn
 train_time_start_on_device = timer()
 
 
-epochs = 3
+epochs = 100
 for epoch in tqdm(range(epochs)):
     print(f"Epoch: {epoch}\n-------- ")
 
