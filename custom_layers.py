@@ -1,5 +1,6 @@
 import numpy as np
 import torch.nn as nn
+import torch
 
 
 # RELU
@@ -47,11 +48,13 @@ class ReLU(nn.Module):
 # Dropout
 class Dropout(nn.Module):
     def __init__(self, dropout_rate):
+        super(Dropout, self).__init__()
         self.dropout_rate = dropout_rate
-        self.mask = None
 
     def forward(self, input):
-        self.mask = np.random.binomial(1, 1 - self.dropout_rate, size=input.shape)
+        self.mask = torch.tensor(
+            torch.bernoulli(torch.ones_like(input) * (1 - self.dropout_rate))
+        ).to(input.device)
         # Multiply the input by the mask to "drop out" some values
         self.output = input * self.mask
         return self.output

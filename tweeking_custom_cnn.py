@@ -67,8 +67,8 @@ class network(nn.Module):
         self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2)
 
         # Dropout layer
-        self.drop1 = nn.Dropout(0.5)
-
+        # self.drop1 = nn.Dropout(0.5)
+        self.drop1 = Dropout(0.5)
         # fully connected layer
 
         self.fc1 = nn.Linear(in_features=64 * 7 * 7, out_features=10)
@@ -206,13 +206,14 @@ Initializing training-testing of nn
 """
 train_time_start_on_device = timer()
 
+writer = SummaryWriter("runs/mnist_trainer_{}".format(train_time_start_on_device))
 
-epochs = 100
+epochs = 5
 for epoch in tqdm(range(epochs)):
     print(f"Epoch: {epoch}\n-------- ")
 
     """Training Step """
-    train_step(
+    train_loss, train_acc = train_step(
         model=cnn,
         data_loader=train_loader,
         loss_fn=loss_function,
@@ -222,7 +223,7 @@ for epoch in tqdm(range(epochs)):
     )
 
     """Testing Step """
-    test_step(
+    test_loss, test_acc = test_step(
         model=cnn,
         data_loader=test_loader,
         loss_fn=loss_function,
@@ -231,6 +232,10 @@ for epoch in tqdm(range(epochs)):
     )
     print(f"epoch {epoch} done!")
 
+    writer.add_scalar("Loss/train", train_loss, epoch)
+    writer.add_scalar("Loss/test", test_loss, epoch)
+    writer.add_scalar("Accuracy/train", train_acc, epoch)
+    writer.add_scalar("Accuracy/test", test_acc, epoch)
 
 train_time_end_on_device = timer()
 
