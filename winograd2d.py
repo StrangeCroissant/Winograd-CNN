@@ -1,27 +1,41 @@
 import torch
 import torch.nn.functional as F
-from torchvision import datasets, transforms
+
 import math
 
 
+import torch
+import torch.nn.functional as F
+
+
 class WinogradConv2d(torch.nn.Module):
-    def __init__(self, in_channels, out_channels, m, r):
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0):
         super(WinogradConv2d, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
-        self.m = m
-        self.r = r
-        self.alpha = m + r - 1
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.padding = padding
+
+        # Compute Winograd parameters
+        self.m = 2
+        self.r = 3
+        self.alpha = self.m + self.r - 1
 
         # Filter transform matrix G
         self.G = torch.tensor(
-            [[1, 0, 0], [0.5, 0.5, 0.5], [0.5, -0.5, 0.5], [0, 0, 1], [0, 1, -1]]
+            [
+                [1, 0, 0],
+                [1 / 2, 1 / 2, 1 / 2],
+                [1 / 2, -1 / 2, 1 / 2],
+                [0, 0, 1],
+                [0, 1, 0],
+                [0, -1, 0],
+            ]
         )
 
         # Inverse filter transform matrix GT
-        self.GT = torch.tensor(
-            [[1, 0.5, 0.5, 0, 0], [0, 0.5, -0.5, 0, 1], [0, 0.5, 0.5, 1, -1]]
-        )
+        self.GT = self.G.T
 
         # Data transform matrix B
         self.B = torch.tensor(
@@ -34,7 +48,9 @@ class WinogradConv2d(torch.nn.Module):
         )
 
         # Initialize weight and bias tensors
-        self.weight = torch.nn.Parameter(torch.Tensor(out_channels, in_channels, m, m))
+        self.weight = torch.nn.Parameter(
+            torch.Tensor(out_channels, in_channels, self.m, self.m)
+        )
         self.bias = torch.nn.Parameter(torch.Tensor(out_channels))
         self.reset_parameters()
 
@@ -46,8 +62,20 @@ class WinogradConv2d(torch.nn.Module):
             torch.nn.init.uniform_(self.bias, -bound, bound)
 
     def forward(self, X):
+        # Pad the input tensor
+        X = F.pad(X, pad=(self.m - 1, self.m - 1, self.m - 1, self.m - 1))
+
+        # Unfold the input tensor into tiles
+        X_tiles = X.unfold(2, self.m, self.r).unfold(3, self.m, self.r)
+        X_tiles = (
+            X_tiles.permute(0, 2, 3, 1, 4, 5)
+            .contiguous()
+            .view(-1, self.m, self.m, self.in_channels)
+        )
+        X = X_tiles
+
         # Transform input data to Winograd domain
-        X = self.B @ X @ self.BT
+        X_tiles = self.B @ X_tiles @ self.BT
 
         # Compute output tensor
         output_tensor = torch.zeros(
@@ -66,24 +94,19 @@ class WinogradConv2d(torch.nn.Module):
                 V = self.BT @ filter_tensor @ self.G
 
                 for b in range(X.shape[0]):
-                    # Compute data tensor U
-                    data_tensor = (
-                        X[b, c]
-                        .unfold(0, self.alpha, self.r - 1)
-                        .unfold(1, self.alpha, self.r - 1)
-                        .transpose(0, 1)
-                        .transpose(1, 2)
-                        .reshape(-1, self.alpha * self.alpha)
-                    )
-                    U = self.G @ data_tensor @ self.GT
+                    for i in range(X_tiles.shape[2]):
+                        for j in range(X_tiles.shape[3]):
+                            # Extract data tensor U from tile
+                            data_tensor = X_tiles[b, c, i, j]
+                            U = self.G @ data_tensor @ self.GT
 
-                    # Compute multiplication tensor M
-                    M = torch.matmul(V, U)
+                            # Compute multiplication tensor M
+                            M = torch.matmul(V, U)
 
-                    # Reshape and add bias
-                    M = M.view(self.m, self.m, -1).sum(dim=2) + self.bias[k]
+                            # Reshape and add bias
+                            M = M.view(self.m, self.m, -1).sum(dim=2) + self.bias[k]
 
-                    # Transform back to spatial domain
-                    output_tensor[b, k] += self.BT @ M @ self.B
+                            # Transform back to spatial domain
+                            output_tensor[b, k, i, j] += self.BT @ M @ self.B
 
         return output_tensor

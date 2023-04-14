@@ -5,44 +5,51 @@ import torch
 
 # RELU
 class ReLU(nn.Module):
-    def __init__(self):
-        def forward(self, x):
-            """
-            Computes the forward pass of the ReLU
-            Input:
-                -x : Inputs of any shape
-            Returns a tuple of: (out,cache)
+    def __init__(self, n_slope=0):
+        super(ReLU, self).__init__()
+        self.n_slope = n_slope
 
-            The shape on the output is the same as the input
+    def forward(self, x):
+        """
+        Computes the forward pass of the ReLU
+        Input:
+            -x : Inputs of any shape
+        Returns a tuple of: (out,cache)
 
-            """
+        The shape on the output is the same as the input
 
-            out = None
+        """
+        if self.training:
+            output = torch.max(self.n_slope * x, x)
+            self.mask = (x > 0).float()
 
-            relu = lambda x: x * (x > 0).astype(float)
-            out = relu(x)
+        else:
+            output = x
 
-            # cahce the out
+        return output
 
-            cache = x
+    def backward(self, output_gradient):
+        """
+        Computes the backward pass of ReLU
 
-            return out, cache
+        Input:
+            - dout: grads of any shape
+            - cache : previous input (used on o forward pass)
+        """
+        # # init dx and x
+        # dx, x = None, cache
 
-        def backward(dout, cache):
-            """
-            Computes the backward pass of ReLU
+        # # zeros all the dx for negative x
+        # dx = dout * (x > 0)
 
-            Input:
-                - dout: grads of any shape
-                - cache : previous input (used on o forward pass)
-            """
-            # init dx and x
-            dx, x = None, cache
+        # return dx  # terun gradient
 
-            # zeros all the dx for negative x
-            dx = dout * (x > 0)
+        if self.training:
+            input_gradient = output_gradient * self.mask
 
-            return dx  # terun gradient
+        else:
+            input_gradient = output_gradient
+        return input_gradient
 
 
 # Dropout
@@ -52,17 +59,32 @@ class Dropout(nn.Module):
         self.dropout_rate = dropout_rate
 
     def forward(self, input):
-        self.mask = torch.tensor(
-            torch.bernoulli(torch.ones_like(input) * (1 - self.dropout_rate))
-        ).to(input.device)
-        # Multiply the input by the mask to "drop out" some values
-        self.output = input * self.mask
-        return self.output
+        # self.mask = torch.tensor(
+        #     torch.bernoulli(torch.ones_like(input) * (1 - self.dropout_rate))
+        # ).to(input.device)
+        # # Multiply the input by the mask to "drop out" some values
+        # self.output = input * self.mask
+        # return self.output
+
+        if self.training:
+            # binary mask of shape x
+            mask = torch.rand_like(input) > self.dropout_rate
+
+            output = input * mask / (1 - self.dropout_rate)
+            # for backward
+            self.mask = mask
+        else:
+            output = input
+        return output
 
     def backward(self, output_gradient, learning_rate):
-        # Apply the mask to the output gradient to backpropagate
-        # only through the values that were not "dropped out"
-        return output_gradient * self.mask
+        # return output_gradient * self.mask
+
+        if self.training:
+            input_gradient = output_gradient * self.mask / (1 - self.dropout_rate)
+        else:
+            input_gradient = output_gradient
+        return input_gradient
 
 
 # Dense
@@ -94,3 +116,19 @@ class Reshape(nn.Module):
 
     def backward(self, output_gradient, learning_rate):
         return np.reshape(output_gradient, self.input_shape)
+    
+
+class Softmax(nn.Module):
+
+    def __init__(self):
+        super(Softmax,self).__init__()
+        self.input = input
+    def forward(self,input):
+        numerator = torch.exp(input)
+        self.output = numerator/torch.sum(numerator)
+        return self.output
+    
+    def backward(self, output_gradient,learning_rate):
+        n=self.output.size()[0]
+        numerator = torch.tile(self.output,(n,))
+        return torch.dot(numerator*(torch.eye(n) - torch.transpose(numerator, 0, 1)), output_gradient)    
